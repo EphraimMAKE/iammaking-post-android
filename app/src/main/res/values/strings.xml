@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">IAMMAKING Post</string>
+    <string name="choose_file">Choose File</string>
+    <string name="no_connection">No internet connection</string>
+    <string name="retry">Retry</string>
+</resources>
