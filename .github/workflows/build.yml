@@ -82,7 +82,7 @@ jobs:
 
             | Champ | Valeur |
             |-------|--------|
-            | Package | `com.iammaking.com.post.app` |
+            | Package | `com.iammaking.post` |
             | versionName | `${{ env.VERSION_NAME }}` |
             | versionCode | `${{ env.VERSION_CODE }}` |
             | Commit | `${{ github.sha }}` |
