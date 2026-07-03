@@ -39,6 +39,17 @@ jobs:
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/release.keystore
 
+      # versionCode = 1000 + run_number (starts at 1001, increments each build)
+      - name: Set version code
+        run: |
+          VERSION_CODE=$((1000 + ${{ github.run_number }}))
+          VERSION_NAME="1.0.${{ github.run_number }}"
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          sed -i "s/versionCode 1001/versionCode $VERSION_CODE/" app/build.gradle
+          sed -i "s/versionName \"1.0.1\"/versionName \"$VERSION_NAME\"/" app/build.gradle
+          echo "Building versionCode=$VERSION_CODE versionName=$VERSION_NAME"
+
       - name: Build Release AAB
         run: ./gradlew bundleRelease --no-daemon
         env:
@@ -46,38 +57,41 @@ jobs:
           SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Verify AAB was signed
+      - name: Verify AAB
+        run: ls -lh app/build/outputs/bundle/release/
+
+      - name: Rename AAB with version
         run: |
-          ls -lh app/build/outputs/bundle/release/
+          cp app/build/outputs/bundle/release/app-release.aab \
+             app/build/outputs/bundle/release/iammaking-post-${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}.aab
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: iammaking-post-release-${{ github.run_number }}
-          path: app/build/outputs/bundle/release/app-release.aab
-          retention-days: 30
+          name: iammaking-post-${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}
+          path: app/build/outputs/bundle/release/iammaking-post-*.aab
+          retention-days: 90
 
       - name: Create GitHub Release
-        if: github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: "Release 1.0.${{ github.run_number }}"
+          tag_name: v${{ env.VERSION_NAME }}
+          name: "IAMMAKING Post v${{ env.VERSION_NAME }} (build ${{ env.VERSION_CODE }})"
           body: |
             ## IAMMAKING Post — Android Release
 
-            Built automatically from commit ${{ github.sha }}.
+            | Champ | Valeur |
+            |-------|--------|
+            | Package | `com.iammaking.com.post.app` |
+            | versionName | `${{ env.VERSION_NAME }}` |
+            | versionCode | `${{ env.VERSION_CODE }}` |
+            | Commit | `${{ github.sha }}` |
 
-            ### Install
-            Upload `iammaking-post.aab` to Google Play Console.
-
-            ### What's included
-            - WebView wrapping https://post.iammaking.com
-            - Camera + file upload support
-            - Pull-to-refresh
-            - Offline fallback page
-            - Signed release build
-          files: app/build/outputs/bundle/release/app-release.aab
+            ### Comment utiliser ce fichier
+            1. Télécharge `iammaking-post-${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}.aab`
+            2. Va sur [Google Play Console](https://play.google.com/console)
+            3. Production → Créer une version → Dépose l'AAB
+          files: app/build/outputs/bundle/release/iammaking-post-*.aab
           draft: false
           prerelease: false
         env:
