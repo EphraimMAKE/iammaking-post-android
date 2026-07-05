@@ -1,4 +1,4 @@
-name: Build & Sign Release AAB
+name: Build & Sign Release
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    name: Build Release AAB
+    name: Build APK + AAB
     runs-on: ubuntu-latest
 
     steps:
@@ -22,12 +22,12 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.4'
+          cache-disabled: true
 
       - name: Generate Gradle wrapper
         run: gradle wrapper --gradle-version 8.4
@@ -39,8 +39,7 @@ jobs:
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/release.keystore
 
-      # versionCode = 1000 + run_number (starts at 1001, increments each build)
-      - name: Set version code
+      - name: Set version code & name
         run: |
           VERSION_CODE=$((1000 + ${{ github.run_number }}))
           VERSION_NAME="1.0.${{ github.run_number }}"
@@ -48,28 +47,37 @@ jobs:
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
           sed -i "s/versionCode 1001/versionCode $VERSION_CODE/" app/build.gradle
           sed -i "s/versionName \"1.0.1\"/versionName \"$VERSION_NAME\"/" app/build.gradle
-          echo "Building versionCode=$VERSION_CODE versionName=$VERSION_NAME"
+          echo "✅ versionCode=$VERSION_CODE  versionName=$VERSION_NAME"
 
-      - name: Build Release AAB
-        run: ./gradlew bundleRelease --no-daemon
+      - name: Build Release AAB + APK
+        run: ./gradlew bundleRelease assembleRelease --no-daemon
         env:
           SIGNING_STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Verify AAB
-        run: ls -lh app/build/outputs/bundle/release/
-
-      - name: Rename AAB with version
+      - name: Rename output files
         run: |
-          cp app/build/outputs/bundle/release/app-release.aab \
-             app/build/outputs/bundle/release/iammaking-post-${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}.aab
+          AAB_SRC="app/build/outputs/bundle/release/app-release.aab"
+          APK_SRC="app/build/outputs/apk/release/app-release.apk"
+          AAB_DST="app/build/outputs/bundle/release/iammaking-post-${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}.aab"
+          APK_DST="app/build/outputs/apk/release/iammaking-post-${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}.apk"
+          cp "$AAB_SRC" "$AAB_DST"
+          cp "$APK_SRC" "$APK_DST"
+          ls -lh app/build/outputs/bundle/release/ app/build/outputs/apk/release/
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: iammaking-post-${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}
+          name: AAB-${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}
           path: app/build/outputs/bundle/release/iammaking-post-*.aab
+          retention-days: 90
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: APK-${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}
+          path: app/build/outputs/apk/release/iammaking-post-*.apk
           retention-days: 90
 
       - name: Create GitHub Release
@@ -87,11 +95,17 @@ jobs:
             | versionCode | `${{ env.VERSION_CODE }}` |
             | Commit | `${{ github.sha }}` |
 
-            ### Comment utiliser ce fichier
-            1. Télécharge `iammaking-post-${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}.aab`
+            ### Fichiers
+            - **`.aab`** → Upload sur Google Play Console (recommandé)
+            - **`.apk`** → Installation directe sur Android (tests / distribution manuelle)
+
+            ### Comment utiliser
+            1. Télécharge l'AAB ci-dessous
             2. Va sur [Google Play Console](https://play.google.com/console)
             3. Production → Créer une version → Dépose l'AAB
-          files: app/build/outputs/bundle/release/iammaking-post-*.aab
+          files: |
+            app/build/outputs/bundle/release/iammaking-post-*.aab
+            app/build/outputs/apk/release/iammaking-post-*.apk
           draft: false
           prerelease: false
         env:
