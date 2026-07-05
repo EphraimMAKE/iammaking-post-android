@@ -42,6 +42,20 @@ jobs:
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
 
+      - name: Generate launcher icons
+        run: |
+          for SIZE_DIR in "mdpi:48" "hdpi:72" "xhdpi:96" "xxhdpi:144" "xxxhdpi:192"; do
+            DIR=$(echo $SIZE_DIR | cut -d: -f1)
+            SIZE=$(echo $SIZE_DIR | cut -d: -f2)
+            mkdir -p android/app/src/main/res/mipmap-${DIR}
+            convert -size ${SIZE}x${SIZE} xc:#6C63FF \
+              -fill white -font DejaVu-Sans-Bold -pointsize $((SIZE/2)) \
+              -gravity Center -annotate 0 "P" \
+              android/app/src/main/res/mipmap-${DIR}/ic_launcher.png
+            cp android/app/src/main/res/mipmap-${DIR}/ic_launcher.png \
+               android/app/src/main/res/mipmap-${DIR}/ic_launcher_round.png
+          done
+
       - name: Flutter dependencies
         run: flutter pub get
 
