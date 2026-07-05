@@ -21,8 +21,6 @@ def appVersionName = ciVersionName ?: "1.0.1"
 android {
     namespace "com.iammaking.post"
     compileSdk 35
-    ndkVersion flutter.ndkVersion
-
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -30,10 +28,6 @@ android {
 
     kotlinOptions {
         jvmTarget = '17'
-    }
-
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
     }
 
     defaultConfig {
