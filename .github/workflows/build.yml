@@ -26,39 +26,84 @@ jobs:
           channel: stable
           cache: true
 
+      # ── Versioning: YEAR.MONTH.BUILD ──────────────────────────────────────
+      # year starts at 1 (2026=1), month 0-based (Jan=0), build=run_number
       - name: Set version
         run: |
-          YEAR=$(( $(date +%Y) - 2025 ))      # 2026 → 1, 2027 → 2
-          MONTH=$(( 10#$(date +%m) - 1 ))     # Jan=0 … Dec=11
+          YEAR=$(( $(date +%Y) - 2025 ))
+          MONTH=$(( 10#$(date +%m) - 1 ))
           BUILD=${{ github.run_number }}
           VERSION_NAME="${YEAR}.${MONTH}.${BUILD}"
           VERSION_CODE=$(( YEAR * 10000 + MONTH * 100 + BUILD ))
-          echo "YEAR=$YEAR MONTH=$MONTH BUILD=$BUILD → $VERSION_NAME ($VERSION_CODE)"
+          echo "→ $VERSION_NAME ($VERSION_CODE)"
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
           echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
           sed -i "s/^version: .*/version: $VERSION_NAME+$VERSION_CODE/" pubspec.yaml
 
+      # ── Keystore ──────────────────────────────────────────────────────────
       - name: Decode keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
 
+      # ── Launcher icons (Python, no ImageMagick needed) ────────────────────
       - name: Generate launcher icons
         run: |
-          for SIZE_DIR in "mdpi:48" "hdpi:72" "xhdpi:96" "xxhdpi:144" "xxxhdpi:192"; do
-            DIR=$(echo $SIZE_DIR | cut -d: -f1)
-            SIZE=$(echo $SIZE_DIR | cut -d: -f2)
-            mkdir -p android/app/src/main/res/mipmap-${DIR}
-            convert -size ${SIZE}x${SIZE} xc:#6C63FF \
-              -fill white -font DejaVu-Sans-Bold -pointsize $((SIZE/2)) \
-              -gravity Center -annotate 0 "P" \
-              android/app/src/main/res/mipmap-${DIR}/ic_launcher.png
-            cp android/app/src/main/res/mipmap-${DIR}/ic_launcher.png \
-               android/app/src/main/res/mipmap-${DIR}/ic_launcher_round.png
-          done
+          pip install pillow --quiet
+          python3 - <<'PYEOF'
+          import os, struct, zlib
 
-      - name: Flutter dependencies
+          # Pure-Python minimal PNG writer (no Pillow needed as fallback)
+          # But we use Pillow here since we installed it above.
+          from PIL import Image, ImageDraw
+
+          BG   = (108, 99, 255, 255)   # #6C63FF
+          RING = (255, 255, 255, 255)
+
+          SIZES = {
+              "mdpi":    48,
+              "hdpi":    72,
+              "xhdpi":   96,
+              "xxhdpi":  144,
+              "xxxhdpi": 192,
+          }
+
+          for density, size in SIZES.items():
+              for folder in [f"mipmap-{density}"]:
+                  path = f"android/app/src/main/res/{folder}"
+                  os.makedirs(path, exist_ok=True)
+
+                  # Square icon
+                  img = Image.new("RGBA", (size, size), BG)
+                  d = ImageDraw.Draw(img)
+                  # White circle in centre
+                  m = size // 6
+                  d.ellipse([m, m, size-m, size-m], fill=RING)
+                  # Purple "P" letter approximation using a filled rect
+                  cx, cy = size // 2, size // 2
+                  t = max(2, size // 12)
+                  # vertical bar
+                  d.rectangle([cx-t*2, cy-t*3, cx-t, cy+t*3], fill=BG)
+                  # top bump
+                  d.rectangle([cx-t*2, cy-t*3, cx+t*2, cy-t], fill=BG)
+                  d.ellipse([cx-t, cy-t*3, cx+t*3, cy], fill=BG)
+
+                  img.save(f"{path}/ic_launcher.png")
+
+                  # Round icon (circle-cropped)
+                  r_img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+                  mask  = Image.new("L", (size, size), 0)
+                  md    = ImageDraw.Draw(mask)
+                  md.ellipse([0, 0, size-1, size-1], fill=255)
+                  r_img.paste(img, mask=mask)
+                  r_img.save(f"{path}/ic_launcher_round.png")
+
+          print("Icons generated OK")
+          PYEOF
+
+      # ── Flutter deps ──────────────────────────────────────────────────────
+      - name: Flutter pub get
         run: flutter pub get
 
+      # ── Build APK ─────────────────────────────────────────────────────────
       - name: Build Release APK
         run: flutter build apk --release
         env:
@@ -66,6 +111,7 @@ jobs:
           SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
+      # ── Build AAB ─────────────────────────────────────────────────────────
       - name: Build Release AAB
         run: flutter build appbundle --release
         env:
@@ -73,27 +119,31 @@ jobs:
           SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
+      # ── Rename ────────────────────────────────────────────────────────────
       - name: Rename artifacts
         run: |
           cp build/app/outputs/flutter-apk/app-release.apk \
-             iammaking-post-${{ env.VERSION_NAME }}.apk
+             "iammaking-post-${{ env.VERSION_NAME }}.apk"
           cp build/app/outputs/bundle/release/app-release.aab \
-             iammaking-post-${{ env.VERSION_NAME }}.aab
+             "iammaking-post-${{ env.VERSION_NAME }}.aab"
+          ls -lh iammaking-post-*.apk iammaking-post-*.aab
 
-      - name: Upload APK artifact
+      # ── Upload ────────────────────────────────────────────────────────────
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: APK-${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}
           path: iammaking-post-${{ env.VERSION_NAME }}.apk
           retention-days: 90
 
-      - name: Upload AAB artifact
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
           name: AAB-${{ env.VERSION_NAME }}-${{ env.VERSION_CODE }}
           path: iammaking-post-${{ env.VERSION_NAME }}.aab
           retention-days: 90
 
+      # ── GitHub Release ────────────────────────────────────────────────────
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -102,12 +152,12 @@ jobs:
           body: |
             ## IAMMAKING Post — Flutter Release
 
-            | Champ        | Valeur |
-            |--------------|--------|
-            | Package      | `com.iammaking.post` |
-            | versionName  | `${{ env.VERSION_NAME }}` |
-            | versionCode  | `${{ env.VERSION_CODE }}` |
-            | Commit       | `${{ github.sha }}` |
+            | Champ       | Valeur |
+            |-------------|--------|
+            | Package     | `com.iammaking.post` |
+            | versionName | `${{ env.VERSION_NAME }}` |
+            | versionCode | `${{ env.VERSION_CODE }}` |
+            | Commit      | `${{ github.sha }}` |
 
             ### Fichiers
             - **`.aab`** → Google Play Console (recommandé)
