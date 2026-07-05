@@ -24,7 +24,7 @@ ThemeData appTheme() => ThemeData(
     centerTitle: false,
     titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: kText),
   ),
-  cardTheme: CardThemeData(
+  cardTheme: CardTheme(
     color: kSurface,
     elevation: 0,
     shape: RoundedRectangleBorder(

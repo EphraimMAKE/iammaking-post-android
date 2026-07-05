@@ -28,10 +28,14 @@ jobs:
 
       - name: Set version
         run: |
-          VERSION_CODE=$((1000 + ${{ github.run_number }}))
-          VERSION_NAME="1.0.${{ github.run_number }}"
-          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+          YEAR=$(( $(date +%Y) - 2025 ))      # 2026 → 1, 2027 → 2
+          MONTH=$(( 10#$(date +%m) - 1 ))     # Jan=0 … Dec=11
+          BUILD=${{ github.run_number }}
+          VERSION_NAME="${YEAR}.${MONTH}.${BUILD}"
+          VERSION_CODE=$(( YEAR * 10000 + MONTH * 100 + BUILD ))
+          echo "YEAR=$YEAR MONTH=$MONTH BUILD=$BUILD → $VERSION_NAME ($VERSION_CODE)"
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
           sed -i "s/^version: .*/version: $VERSION_NAME+$VERSION_CODE/" pubspec.yaml
 
       - name: Decode keystore
