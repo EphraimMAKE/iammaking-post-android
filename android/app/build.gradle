@@ -34,8 +34,8 @@ android {
         applicationId "com.iammaking.post"
         minSdk flutter.minSdkVersion
         targetSdk 35
-        versionCode 1001
-        versionName "1.0.1"
+        versionCode (System.getenv("VERSION_CODE") ?: "1001").toInteger()
+        versionName  System.getenv("VERSION_NAME") ?: "1.0.1"
     }
 
     signingConfigs {
