@@ -12,6 +12,12 @@ if (localPropertiesFile.exists()) {
     }
 }
 
+// Read version from CI env vars; fall back to defaults for local builds
+def ciVersionCode = System.getenv("VERSION_CODE")
+def ciVersionName = System.getenv("VERSION_NAME")
+def appVersionCode = ciVersionCode ? ciVersionCode.toInteger() : 1001
+def appVersionName = ciVersionName ?: "1.0.1"
+
 android {
     namespace "com.iammaking.post"
     compileSdk 35
@@ -34,8 +40,8 @@ android {
         applicationId "com.iammaking.post"
         minSdk flutter.minSdkVersion
         targetSdk 35
-        versionCode (System.getenv("VERSION_CODE") ?: "1001").toInteger()
-        versionName  System.getenv("VERSION_NAME") ?: "1.0.1"
+        versionCode appVersionCode
+        versionName appVersionName
     }
 
     signingConfigs {
