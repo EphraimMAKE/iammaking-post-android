@@ -1,4 +1,0 @@
--keepattributes *Annotation*
--keepattributes SourceFile,LineNumberTable
--keep class com.iammaking.post.** { *; }
--keep class androidx.webkit.** { *; }
