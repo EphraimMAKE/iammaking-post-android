@@ -1,10 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/social_account.dart';
 import '../providers/accounts_provider.dart';
 import '../providers/posts_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/post_preview_modal.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -13,58 +16,144 @@ class CreatePostScreen extends StatefulWidget {
 }
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
-  final _captionCtrl   = TextEditingController();
+  final _captionCtrl = TextEditingController();
+  final _picker      = ImagePicker();
   final Set<int> _selectedAccountIds = {};
-  bool _schedule = false;
+
+  bool      _schedule = false;
   DateTime? _scheduledAt;
-  bool _loading = false;
+  XFile?    _image;
+  bool      _loading = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => context.read<AccountsProvider>().load());
+    WidgetsBinding.instance.addPostFrameCallback(
+        (_) => context.read<AccountsProvider>().load());
   }
 
   @override
-  void dispose() { _captionCtrl.dispose(); super.dispose(); }
+  void dispose() {
+    _captionCtrl.dispose();
+    super.dispose();
+  }
+
+  // ── Image picker ─────────────────────────────────────────────
+
+  Future<void> _pickImage(ImageSource source) async {
+    final file = await _picker.pickImage(
+      source: source,
+      imageQuality: 85,
+      maxWidth: 1920,
+    );
+    if (file != null) setState(() => _image = file);
+  }
+
+  void _showImageOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: kSurface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (_) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            leading: const Icon(Icons.photo_library_rounded, color: kPrimary),
+            title: const Text('Choisir depuis la galerie'),
+            onTap: () { Navigator.pop(context); _pickImage(ImageSource.gallery); },
+          ),
+          ListTile(
+            leading: const Icon(Icons.camera_alt_rounded, color: kPrimary),
+            title: const Text('Prendre une photo'),
+            onTap: () { Navigator.pop(context); _pickImage(ImageSource.camera); },
+          ),
+          if (_image != null)
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded, color: kDanger),
+              title: const Text('Supprimer l\'image', style: TextStyle(color: kDanger)),
+              onTap: () { Navigator.pop(context); setState(() => _image = null); },
+            ),
+        ]),
+      ),
+    );
+  }
+
+  // ── Date/time picker ─────────────────────────────────────────
 
   Future<void> _pickDateTime() async {
     final now = DateTime.now();
     final date = await showDatePicker(
-      context: context, initialDate: now.add(const Duration(hours: 1)),
-      firstDate: now, lastDate: now.add(const Duration(days: 365)),
+      context: context,
+      initialDate: now.add(const Duration(hours: 1)),
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
     );
     if (date == null || !mounted) return;
-    final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(now));
+    final time = await showTimePicker(
+        context: context, initialTime: TimeOfDay.fromDateTime(now));
     if (time == null) return;
-    setState(() => _scheduledAt = DateTime(date.year, date.month, date.day, time.hour, time.minute));
+    setState(() => _scheduledAt =
+        DateTime(date.year, date.month, date.day, time.hour, time.minute));
   }
 
+  // ── Preview ──────────────────────────────────────────────────
+
+  void _openPreview(List<SocialAccount> accounts) {
+    if (_captionCtrl.text.trim().isEmpty && _image == null) {
+      _snack('Écris quelque chose ou ajoute une image.', error: true);
+      return;
+    }
+    final selected = accounts
+        .where((a) => _selectedAccountIds.contains(a.id))
+        .toList();
+    showPostPreview(
+      context,
+      caption:   _captionCtrl.text.trim(),
+      accounts:  selected.isNotEmpty ? selected : accounts,
+      imagePath: _image?.path,
+    );
+  }
+
+  // ── Submit ───────────────────────────────────────────────────
+
   Future<void> _submit({required bool publishNow}) async {
-    if (_captionCtrl.text.trim().isEmpty) {
-      _snack('Write something first.', error: true); return;
+    if (_captionCtrl.text.trim().isEmpty && _image == null) {
+      _snack('Écris quelque chose ou ajoute une image.', error: true);
+      return;
     }
     if (_selectedAccountIds.isEmpty) {
-      _snack('Select at least one account.', error: true); return;
+      _snack('Sélectionne au moins un compte.', error: true);
+      return;
     }
     if (_schedule && _scheduledAt == null) {
-      _snack('Choose a date and time.', error: true); return;
+      _snack('Choisis une date et une heure.', error: true);
+      return;
     }
     setState(() => _loading = true);
     final ok = await context.read<PostsProvider>().create(
-      caption:     _captionCtrl.text.trim(),
-      accountIds:  _selectedAccountIds.toList(),
-      scheduleAt:  _schedule ? _scheduledAt!.toUtc().toIso8601String() : null,
-      publishNow:  publishNow,
+      caption:    _captionCtrl.text.trim(),
+      accountIds: _selectedAccountIds.toList(),
+      scheduleAt: _schedule ? _scheduledAt!.toUtc().toIso8601String() : null,
+      imagePath:  _image?.path,
+      publishNow: publishNow,
     );
     if (!mounted) return;
     setState(() => _loading = false);
     if (ok) {
-      _snack(publishNow ? 'Published!' : _schedule ? 'Scheduled!' : 'Draft saved!');
+      _snack(publishNow
+          ? 'Publié !'
+          : _schedule
+              ? 'Post planifié !'
+              : 'Brouillon sauvegardé !');
       _captionCtrl.clear();
-      setState(() { _selectedAccountIds.clear(); _schedule = false; _scheduledAt = null; });
+      setState(() {
+        _selectedAccountIds.clear();
+        _schedule = false;
+        _scheduledAt = null;
+        _image = null;
+      });
     } else {
-      _snack(context.read<PostsProvider>().error ?? 'Error', error: true);
+      _snack(context.read<PostsProvider>().error ?? 'Erreur', error: true);
     }
   }
 
@@ -75,23 +164,35 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     ));
   }
 
+  // ── Build ─────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     final accountsP = context.watch<AccountsProvider>();
     final accounts  = accountsP.accounts;
-    final fmt       = DateFormat('EEE MMM d, HH:mm');
+    final fmt       = DateFormat('EEE d MMM, HH:mm');
 
     return Scaffold(
       backgroundColor: kBg,
-      appBar: AppBar(title: const Text('Create Post')),
+      appBar: AppBar(
+        title: const Text('Créer un post'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => _openPreview(accounts),
+            icon: const Icon(Icons.preview_rounded, size: 18),
+            label: const Text('Aperçu'),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-          // Caption
+          // ── Caption ──────────────────────────────────────────
           Container(
             decoration: BoxDecoration(
-              color: kSurface, borderRadius: BorderRadius.circular(12),
+              color: kSurface,
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: kBorder),
             ),
             padding: const EdgeInsets.all(14),
@@ -100,30 +201,102 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               maxLines: 6,
               maxLength: 2200,
               decoration: const InputDecoration.collapsed(
-                hintText: "What's on your mind?",
+                hintText: "Qu'est-ce que tu veux publier ?",
                 hintStyle: TextStyle(color: kTextMuted),
               ),
               style: const TextStyle(fontSize: 15, height: 1.6),
             ),
           ),
 
-          const SizedBox(height: 20),
-          const Text('Post to', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kText)),
+          const SizedBox(height: 12),
+
+          // ── Image picker / preview ────────────────────────────
+          if (_image != null) ...[
+            Stack(children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                  File(_image!.path),
+                  width: double.infinity,
+                  height: 200,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Positioned(
+                top: 8, right: 8,
+                child: GestureDetector(
+                  onTap: () => setState(() => _image = null),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(Icons.close, color: Colors.white, size: 18),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 8, right: 8,
+                child: GestureDetector(
+                  onTap: _showImageOptions,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.edit_rounded, color: Colors.white, size: 14),
+                      SizedBox(width: 4),
+                      Text('Changer', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    ]),
+                  ),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 12),
+          ] else ...[
+            OutlinedButton.icon(
+              onPressed: _showImageOptions,
+              icon: const Icon(Icons.add_photo_alternate_outlined),
+              label: const Text('Ajouter une image'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                side: const BorderSide(color: kBorder),
+                foregroundColor: kTextMuted,
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // ── Account selector ──────────────────────────────────
+          const Text('Publier sur',
+              style: TextStyle(
+                  fontSize: 14, fontWeight: FontWeight.w700, color: kText)),
           const SizedBox(height: 10),
 
-          // Account chips
           if (accountsP.loading)
-            const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
+            const Center(
+                child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: CircularProgressIndicator()))
           else if (accounts.isEmpty)
             Container(
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: kSurface, borderRadius: BorderRadius.circular(12), border: Border.all(color: kBorder)),
-              child: const Text('No accounts connected. Go to Accounts to connect social platforms.',
-                  style: TextStyle(color: kTextMuted, fontSize: 14)),
+              decoration: BoxDecoration(
+                  color: kSurface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: kBorder)),
+              child: const Text(
+                'Aucun compte connecté. Va dans Comptes pour en ajouter.',
+                style: TextStyle(color: kTextMuted, fontSize: 14),
+              ),
             )
           else
             Wrap(
-              spacing: 8, runSpacing: 8,
+              spacing: 8,
+              runSpacing: 8,
               children: accounts.map((a) {
                 final selected = _selectedAccountIds.contains(a.id);
                 return FilterChip(
@@ -137,8 +310,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   avatar: CircleAvatar(
                     backgroundColor: kPrimary.withOpacity(0.12),
                     radius: 12,
-                    child: Text(a.displayName[0].toUpperCase(),
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: kPrimary)),
+                    child: Text(
+                      a.displayName[0].toUpperCase(),
+                      style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: kPrimary),
+                    ),
                   ),
                 );
               }).toList(),
@@ -146,25 +324,34 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
           const SizedBox(height: 20),
 
-          // Schedule toggle
+          // ── Schedule ──────────────────────────────────────────
           Container(
-            decoration: BoxDecoration(color: kSurface, borderRadius: BorderRadius.circular(12), border: Border.all(color: kBorder)),
+            decoration: BoxDecoration(
+                color: kSurface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: kBorder)),
             child: Column(children: [
               SwitchListTile(
-                title: const Text('Schedule for later', style: TextStyle(fontWeight: FontWeight.w600)),
+                title: const Text('Planifier pour plus tard',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
                 value: _schedule,
                 activeColor: kPrimary,
-                onChanged: (v) => setState(() { _schedule = v; if (!v) _scheduledAt = null; }),
+                onChanged: (v) =>
+                    setState(() { _schedule = v; if (!v) _scheduledAt = null; }),
               ),
               if (_schedule) ...[
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.calendar_today_outlined, color: kPrimary),
                   title: Text(
-                    _scheduledAt != null ? fmt.format(_scheduledAt!) : 'Choose date & time',
-                    style: TextStyle(color: _scheduledAt != null ? kText : kTextMuted),
+                    _scheduledAt != null
+                        ? fmt.format(_scheduledAt!)
+                        : 'Choisir date & heure',
+                    style: TextStyle(
+                        color: _scheduledAt != null ? kText : kTextMuted),
                   ),
-                  trailing: const Icon(Icons.chevron_right_rounded, color: kTextMuted),
+                  trailing: const Icon(Icons.chevron_right_rounded,
+                      color: kTextMuted),
                   onTap: _pickDateTime,
                 ),
               ],
@@ -173,7 +360,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
           const SizedBox(height: 28),
 
-          // Action buttons
+          // ── Actions ───────────────────────────────────────────
           if (_loading)
             const Center(child: CircularProgressIndicator())
           else
@@ -181,13 +368,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               ElevatedButton.icon(
                 onPressed: () => _submit(publishNow: true),
                 icon: const Icon(Icons.send_rounded),
-                label: const Text('Publish Now'),
+                label: const Text('Publier maintenant'),
               ),
               const SizedBox(height: 10),
               OutlinedButton.icon(
                 onPressed: () => _submit(publishNow: false),
                 icon: const Icon(Icons.bookmark_outline_rounded),
-                label: Text(_schedule ? 'Schedule' : 'Save as Draft'),
+                label: Text(_schedule ? 'Planifier' : 'Sauvegarder en brouillon'),
               ),
             ]),
 

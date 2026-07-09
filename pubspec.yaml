@@ -33,6 +33,9 @@ dependencies:
   shimmer: ^3.0.0
   timeago: ^3.6.1
 
+  # Local push notifications
+  flutter_local_notifications: ^17.2.3
+
   cupertino_icons: ^1.0.8
 
 dev_dependencies:

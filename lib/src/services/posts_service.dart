@@ -12,13 +12,29 @@ class PostsService {
     required String caption,
     required List<int> accountIds,
     String? scheduleAt,
+    String? imagePath,
   }) async {
-    final body = <String, dynamic>{
-      'caption':     caption,
-      'account_ids': accountIds,
-      if (scheduleAt != null) 'schedule_at': scheduleAt,
-    };
-    final data = await ApiClient.post('/posts', body);
+    Map<String, dynamic> data;
+
+    if (imagePath != null) {
+      // Multipart when an image is attached
+      final fields = <String, String>{
+        'caption': caption,
+        for (var i = 0; i < accountIds.length; i++)
+          'account_ids[$i]': accountIds[i].toString(),
+        if (scheduleAt != null) 'schedule_at': scheduleAt,
+      };
+      data = await ApiClient.postMultipart('/posts', fields,
+          filePath: imagePath, fileField: 'media');
+    } else {
+      final body = <String, dynamic>{
+        'caption':     caption,
+        'account_ids': accountIds,
+        if (scheduleAt != null) 'schedule_at': scheduleAt,
+      };
+      data = await ApiClient.post('/posts', body);
+    }
+
     return Post.fromJson(data['data'] as Map<String, dynamic>);
   }
 
