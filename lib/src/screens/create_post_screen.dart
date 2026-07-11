@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../core/platform_meta.dart';
 import '../models/social_account.dart';
 import '../providers/accounts_provider.dart';
 import '../providers/posts_provider.dart';
@@ -16,9 +17,10 @@ class CreatePostScreen extends StatefulWidget {
 }
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
-  final _captionCtrl = TextEditingController();
-  final _picker      = ImagePicker();
+  final _captionCtrl   = TextEditingController();
+  final _picker        = ImagePicker();
   final Set<int> _selectedAccountIds = {};
+  int _captionLength = 0;
 
   bool      _schedule = false;
   DateTime? _scheduledAt;
@@ -28,6 +30,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   void initState() {
     super.initState();
+    _captionCtrl.addListener(() => setState(() => _captionLength = _captionCtrl.text.length));
     WidgetsBinding.instance.addPostFrameCallback(
         (_) => context.read<AccountsProvider>().load());
   }
@@ -36,6 +39,17 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void dispose() {
     _captionCtrl.dispose();
     super.dispose();
+  }
+
+  // ── Char limit ───────────────────────────────────────────────
+
+  int _charLimit(List<SocialAccount> accounts) {
+    if (_selectedAccountIds.isEmpty) return 2200;
+    final selected = accounts.where((a) => _selectedAccountIds.contains(a.id));
+    if (selected.isEmpty) return 2200;
+    return selected
+        .map((a) => platformMeta(a.providerKey).charLimit)
+        .reduce((a, b) => a < b ? a : b);
   }
 
   // ── Image picker ─────────────────────────────────────────────
@@ -208,7 +222,26 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
+
+          // ── Char counter ──────────────────────────────────────
+          Builder(builder: (context) {
+            final limit    = _charLimit(accounts);
+            final remain   = limit - _captionLength;
+            final isOver   = remain < 0;
+            final isWarn   = remain >= 0 && remain < 30;
+            final color    = isOver ? kDanger : isWarn ? kWarning : kTextMuted;
+            return Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+              if (isOver)
+                Text('$remain  ', style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600)),
+              Text(
+                '$_captionLength / $limit',
+                style: TextStyle(fontSize: 12, color: color, fontWeight: isOver || isWarn ? FontWeight.w700 : FontWeight.normal),
+              ),
+            ]);
+          }),
+
+          const SizedBox(height: 8),
 
           // ── Image picker / preview ────────────────────────────
           if (_image != null) ...[

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/posts_provider.dart';
+import '../screens/post_detail_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/post_card.dart';
+import '../widgets/shimmer_card.dart';
 
 class PostsScreen extends StatefulWidget {
   const PostsScreen({super.key});
@@ -43,7 +45,7 @@ class _PostsScreenState extends State<PostsScreen>
         ),
       ),
       body: provider.loading
-          ? const Center(child: CircularProgressIndicator())
+          ? shimmerList(count: 4)
           : RefreshIndicator(
               onRefresh: provider.load,
               child: Column(children: [
@@ -78,7 +80,10 @@ class _PostsScreenState extends State<PostsScreen>
                         padding: const EdgeInsets.only(top: 8, bottom: 80),
                         itemCount: posts.length,
                         itemBuilder: (_, i) => PostCard(
-                          post: posts[i],
+                          post:      posts[i],
+                          onTap:     () => Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) => PostDetailScreen(post: posts[i]),
+                          )),
                           onDelete:  () => provider.delete(posts[i].id),
                           onPublish: posts[i].status == 'draft'
                               ? () => _publishAndSnack(context, provider, posts[i].id)

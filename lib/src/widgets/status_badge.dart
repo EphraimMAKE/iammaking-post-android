@@ -7,19 +7,28 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = switch (status) {
-      'published' => ('Published', kSuccess),
-      'scheduled' => ('Scheduled', kWarning),
-      'failed'    => ('Failed',    kDanger),
-      _           => ('Draft',     kTextMuted),
+    final (label, color, icon) = switch (status) {
+      'published' => ('Publié',   kSuccess,   Icons.check_circle_outline_rounded),
+      'scheduled' => ('Planifié', kWarning,   Icons.schedule_rounded),
+      'failed'    => ('Échoué',   kDanger,    Icons.error_outline_rounded),
+      'pending'   => ('En cours', kPrimary,   Icons.hourglass_top_rounded),
+      _           => ('Brouillon',kTextMuted, Icons.edit_outlined),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withOpacity(0.10),
         borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withOpacity(0.25)),
       ),
-      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 12, color: color),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+        ),
+      ]),
     );
   }
 }
