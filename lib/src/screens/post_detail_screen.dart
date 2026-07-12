@@ -7,6 +7,7 @@ import '../models/post.dart';
 import '../providers/posts_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/status_badge.dart';
+import 'edit_post_screen.dart';
 
 class PostDetailScreen extends StatelessWidget {
   final Post post;
@@ -14,7 +15,6 @@ class PostDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fmt      = DateFormat('EEEE d MMMM y, HH:mm', 'fr');
     final fmtShort = DateFormat('d MMM y, HH:mm');
     final provider = context.read<PostsProvider>();
 
@@ -23,10 +23,52 @@ class PostDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Détail du post'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_outline_rounded),
-            tooltip: 'Supprimer',
-            onPressed: () => _confirmDelete(context, provider),
+          // Edit (only for draft/scheduled)
+          if (post.status == 'draft' || post.status == 'scheduled')
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Modifier',
+              onPressed: () async {
+                final updated = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => EditPostScreen(post: post)),
+                );
+                if (updated == true && context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          // More actions menu
+          PopupMenuButton<_Action>(
+            onSelected: (a) => _handleAction(context, provider, a),
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: _Action.duplicate,
+                child: ListTile(
+                  leading: Icon(Icons.copy_all_rounded),
+                  title: Text('Dupliquer'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              if (post.status == 'failed')
+                const PopupMenuItem(
+                  value: _Action.retry,
+                  child: ListTile(
+                    leading: Icon(Icons.refresh_rounded),
+                    title: Text('Réessayer'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              const PopupMenuItem(
+                value: _Action.delete,
+                child: ListTile(
+                  leading: Icon(Icons.delete_outline_rounded, color: kDanger),
+                  title: Text('Supprimer', style: TextStyle(color: kDanger)),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -56,11 +98,14 @@ class PostDetailScreen extends StatelessWidget {
                 const Divider(height: 1),
                 const SizedBox(height: 10),
                 Row(children: [
-                  const Icon(Icons.schedule_rounded, size: 16, color: kWarning),
+                  const Icon(Icons.schedule_rounded, size: 15, color: kWarning),
                   const SizedBox(width: 6),
                   Text(
                     'Planifié le ${fmtShort.format(post.scheduledAt!.toLocal())}',
-                    style: const TextStyle(fontSize: 13, color: kWarning, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontSize: 13,
+                        color: kWarning,
+                        fontWeight: FontWeight.w500),
                   ),
                 ]),
               ],
@@ -82,7 +127,10 @@ class PostDetailScreen extends StatelessWidget {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
                   const Text('Caption',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kTextMuted)),
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: kTextMuted)),
                   const Spacer(),
                   GestureDetector(
                     onTap: () {
@@ -95,38 +143,38 @@ class PostDetailScreen extends StatelessWidget {
                     child: const Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(Icons.copy_rounded, size: 14, color: kTextMuted),
                       SizedBox(width: 4),
-                      Text('Copier', style: TextStyle(fontSize: 12, color: kTextMuted)),
+                      Text('Copier',
+                          style: TextStyle(fontSize: 12, color: kTextMuted)),
                     ]),
                   ),
                 ]),
                 const SizedBox(height: 10),
-                Text(
-                  post.caption,
-                  style: const TextStyle(fontSize: 15, height: 1.6, color: kText),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  '${post.caption.length} caractères',
-                  style: const TextStyle(fontSize: 11, color: kTextMuted),
-                ),
+                Text(post.caption,
+                    style: const TextStyle(
+                        fontSize: 15, height: 1.6, color: kText)),
+                const SizedBox(height: 8),
+                Text('${post.caption.length} caractères',
+                    style: const TextStyle(fontSize: 11, color: kTextMuted)),
               ]),
             ),
 
           const SizedBox(height: 14),
 
           // ── Media ────────────────────────────────────────────
-          if (post.medias.isNotEmpty)
-            _MediaSection(medias: post.medias),
+          if (post.medias.isNotEmpty) _MediaSection(medias: post.medias),
 
           // ── Accounts ─────────────────────────────────────────
           if (post.accounts.isNotEmpty) ...[
             const Text('Comptes',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kTextMuted)),
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: kTextMuted)),
             const SizedBox(height: 8),
             ...post.accounts.map((a) {
               final key  = a['provider_key'] as String? ?? '';
               final name = a['display_name'] as String? ?? key;
-              final user = a['username'] as String? ?? '';
+              final user = a['username']     as String? ?? '';
               final meta = platformMeta(key);
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
@@ -143,20 +191,26 @@ class PostDetailScreen extends StatelessWidget {
                     child: Text(meta.abbr,
                         style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 11,
+                            fontSize: 10,
                             fontWeight: FontWeight.w800)),
                   ),
                   const SizedBox(width: 12),
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(name.isNotEmpty ? name : meta.label,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                    if (user.isNotEmpty)
-                      Text('@$user',
-                          style: const TextStyle(fontSize: 12, color: kTextMuted)),
-                  ]),
-                  const Spacer(),
+                  Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text(name.isNotEmpty ? name : meta.label,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 14)),
+                      if (user.isNotEmpty)
+                        Text('@$user',
+                            style: const TextStyle(
+                                fontSize: 12, color: kTextMuted)),
+                    ]),
+                  ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: meta.color.withOpacity(0.10),
                       borderRadius: BorderRadius.circular(6),
@@ -174,7 +228,7 @@ class PostDetailScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // ── Actions ──────────────────────────────────────────
+          // ── Primary action ────────────────────────────────────
           if (post.status == 'draft' || post.status == 'scheduled')
             ElevatedButton.icon(
               onPressed: () => _publish(context, provider),
@@ -182,12 +236,28 @@ class PostDetailScreen extends StatelessWidget {
               label: const Text('Publier maintenant'),
             ),
 
+          if (post.status == 'failed')
+            ElevatedButton.icon(
+              onPressed: () => _retry(context, provider),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Réessayer la publication'),
+              style: ElevatedButton.styleFrom(backgroundColor: kWarning),
+            ),
+
+          const SizedBox(height: 10),
+
+          OutlinedButton.icon(
+            onPressed: () => _duplicate(context, provider),
+            icon: const Icon(Icons.copy_all_rounded),
+            label: const Text('Dupliquer ce post'),
+          ),
+
           const SizedBox(height: 10),
 
           OutlinedButton.icon(
             onPressed: () => _confirmDelete(context, provider),
             icon: const Icon(Icons.delete_outline_rounded),
-            label: const Text('Supprimer le post'),
+            label: const Text('Supprimer'),
             style: OutlinedButton.styleFrom(
               foregroundColor: kDanger,
               side: const BorderSide(color: kDanger),
@@ -200,40 +270,80 @@ class PostDetailScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _publish(BuildContext context, PostsProvider provider) async {
-    final res = await provider.publish(post.id);
-    if (!context.mounted) return;
-    if (res != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Publié !'), backgroundColor: kSuccess));
-      Navigator.of(context).pop();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(provider.error ?? 'Erreur'), backgroundColor: kDanger));
+  // ── Actions ───────────────────────────────────────────────────
+
+  void _handleAction(BuildContext ctx, PostsProvider p, _Action a) {
+    switch (a) {
+      case _Action.duplicate: _duplicate(ctx, p);
+      case _Action.retry:     _retry(ctx, p);
+      case _Action.delete:    _confirmDelete(ctx, p);
     }
   }
 
-  void _confirmDelete(BuildContext context, PostsProvider provider) {
+  Future<void> _publish(BuildContext ctx, PostsProvider p) async {
+    final res = await p.publish(post.id);
+    if (!ctx.mounted) return;
+    if (res != null) {
+      ScaffoldMessenger.of(ctx).showSnackBar(
+          const SnackBar(
+              content: Text('Publié !'), backgroundColor: kSuccess));
+      Navigator.of(ctx).pop();
+    } else {
+      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+          content: Text(p.error ?? 'Erreur'),
+          backgroundColor: kDanger));
+    }
+  }
+
+  Future<void> _retry(BuildContext ctx, PostsProvider p) async {
+    final res = await p.publish(post.id);
+    if (!ctx.mounted) return;
+    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+      content: Text(res != null
+          ? 'Publication réussie !'
+          : (p.error ?? 'Nouvelle tentative échouée')),
+      backgroundColor: res != null ? kSuccess : kDanger,
+    ));
+    if (res != null && ctx.mounted) Navigator.of(ctx).pop();
+  }
+
+  Future<void> _duplicate(BuildContext ctx, PostsProvider p) async {
+    final ok = await p.duplicate(post);
+    if (!ctx.mounted) return;
+    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+      content: Text(ok
+          ? 'Post dupliqué en brouillon !'
+          : (p.error ?? 'Erreur lors de la duplication')),
+      backgroundColor: ok ? kSuccess : kDanger,
+    ));
+  }
+
+  void _confirmDelete(BuildContext ctx, PostsProvider p) {
     showDialog(
-      context: context,
+      context: ctx,
       builder: (_) => AlertDialog(
         title: const Text('Supprimer ce post ?'),
         content: const Text('Cette action est irréversible.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annuler')),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-              await provider.delete(post.id);
-              if (context.mounted) Navigator.of(context).pop();
+              Navigator.pop(ctx);
+              await p.delete(post.id);
+              if (ctx.mounted) Navigator.of(ctx).pop();
             },
-            child: const Text('Supprimer', style: TextStyle(color: kDanger)),
+            child: const Text('Supprimer',
+                style: TextStyle(color: kDanger)),
           ),
         ],
       ),
     );
   }
 }
+
+enum _Action { duplicate, retry, delete }
 
 class _MediaSection extends StatelessWidget {
   final List<Map<String, dynamic>> medias;
@@ -243,10 +353,14 @@ class _MediaSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Text('Médias',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kTextMuted)),
+          style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: kTextMuted)),
       const SizedBox(height: 8),
       ...medias.map((m) {
-        final url = m['url'] as String? ?? m['original_url'] as String? ?? '';
+        final url = m['url'] as String? ??
+            m['original_url'] as String? ?? '';
         if (url.isEmpty) return const SizedBox.shrink();
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
@@ -262,7 +376,9 @@ class _MediaSection extends StatelessWidget {
             errorBuilder: (_, __, ___) => Container(
               height: 80,
               color: kBg,
-              child: const Center(child: Icon(Icons.broken_image_outlined, color: kTextMuted)),
+              child: const Center(
+                  child: Icon(Icons.broken_image_outlined,
+                      color: kTextMuted)),
             ),
           ),
         );

@@ -19,6 +19,9 @@ class _PostsScreenState extends State<PostsScreen>
   static const _filters = ['all', 'draft', 'scheduled', 'published', 'failed'];
   static const _labels  = ['Tous', 'Brouillons', 'Planifiés', 'Publiés', 'Échoués'];
 
+  bool   _searchOpen = false;
+  String _query      = '';
+
   @override
   void initState() {
     super.initState();
@@ -36,7 +39,28 @@ class _PostsScreenState extends State<PostsScreen>
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
-        title: const Text('Posts'),
+        title: _searchOpen
+            ? TextField(
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Rechercher dans vos posts…',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(color: kTextMuted),
+                ),
+                onChanged: (v) => setState(() => _query = v),
+              )
+            : const Text('Posts'),
+        actions: [
+          IconButton(
+            icon: Icon(_searchOpen
+                ? Icons.close_rounded
+                : Icons.search_rounded),
+            onPressed: () => setState(() {
+              _searchOpen = !_searchOpen;
+              if (!_searchOpen) _query = '';
+            }),
+          ),
+        ],
         bottom: TabBar(
           controller: _tabs,
           isScrollable: true,
@@ -49,8 +73,8 @@ class _PostsScreenState extends State<PostsScreen>
           : RefreshIndicator(
               onRefresh: provider.load,
               child: Column(children: [
-                // ── Stats bar ──────────────────────────────────
-                if (provider.totalCount > 0)
+                // Stats bar
+                if (provider.totalCount > 0 && !_searchOpen)
                   _StatsBar(
                     total:     provider.totalCount,
                     published: provider.publishedCount,
@@ -59,21 +83,24 @@ class _PostsScreenState extends State<PostsScreen>
                     failed:    provider.failedCount,
                     onTap:     _tabs.animateTo,
                   ),
-                // ── Tab content ────────────────────────────────
                 Expanded(
                   child: TabBarView(
                     controller: _tabs,
                     children: _filters.map((status) {
-                      final posts = provider.byStatus(status);
+                      final posts = provider.byStatus(status, query: _query);
                       if (posts.isEmpty) {
                         return EmptyState(
-                          icon: Icons.article_outlined,
-                          title: status == 'all'
-                              ? 'Aucun post'
+                          icon: _query.isNotEmpty
+                              ? Icons.search_off_rounded
+                              : Icons.article_outlined,
+                          title: _query.isNotEmpty
+                              ? 'Aucun résultat'
                               : 'Aucun post ${_labelFor(status)}',
-                          subtitle: status == 'all'
-                              ? 'Appuie sur + pour créer ton premier post.'
-                              : 'Pas encore de posts ${_labelFor(status)}.',
+                          subtitle: _query.isNotEmpty
+                              ? 'Essaie un autre mot-clé.'
+                              : status == 'all'
+                                  ? 'Appuie sur + pour créer ton premier post.'
+                                  : 'Pas encore de posts ${_labelFor(status)}.',
                         );
                       }
                       return ListView.builder(
@@ -81,9 +108,10 @@ class _PostsScreenState extends State<PostsScreen>
                         itemCount: posts.length,
                         itemBuilder: (_, i) => PostCard(
                           post:      posts[i],
-                          onTap:     () => Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => PostDetailScreen(post: posts[i]),
-                          )),
+                          onTap:     () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => PostDetailScreen(post: posts[i])),
+                          ),
                           onDelete:  () => provider.delete(posts[i].id),
                           onPublish: posts[i].status == 'draft'
                               ? () => _publishAndSnack(context, provider, posts[i].id)
@@ -104,7 +132,7 @@ class _PostsScreenState extends State<PostsScreen>
       case 'scheduled': return 'planifiés';
       case 'published': return 'publiés';
       case 'failed':    return 'échoués';
-      default:          return status;
+      default:          return '';
     }
   }
 
@@ -112,15 +140,16 @@ class _PostsScreenState extends State<PostsScreen>
       BuildContext ctx, PostsProvider p, int id) async {
     final res = await p.publish(id);
     if (!ctx.mounted) return;
-    final ok = res != null;
     ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-      content: Text(ok ? 'Publié avec succès !' : (p.error ?? 'Échec de publication')),
-      backgroundColor: ok ? kSuccess : kDanger,
+      content: Text(res != null
+          ? 'Publié avec succès !'
+          : (p.error ?? 'Échec de publication')),
+      backgroundColor: res != null ? kSuccess : kDanger,
     ));
   }
 }
 
-// ── Stats bar widget ─────────────────────────────────────────────────────────
+// ── Stats bar ────────────────────────────────────────────────────────────────
 
 class _StatsBar extends StatelessWidget {
   final int total, published, scheduled, drafts, failed;
@@ -136,63 +165,36 @@ class _StatsBar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: kSurface,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(children: [
-          _StatChip(
-            label: 'Total',
-            count: total,
-            color: kPrimary,
-            onTap: () => onTap(0),
-          ),
-          const SizedBox(width: 8),
-          _StatChip(
-            label: 'Publiés',
-            count: published,
-            color: kSuccess,
-            onTap: () => onTap(3),
-          ),
-          const SizedBox(width: 8),
-          _StatChip(
-            label: 'Planifiés',
-            count: scheduled,
-            color: kWarning,
-            onTap: () => onTap(2),
-          ),
-          const SizedBox(width: 8),
-          _StatChip(
-            label: 'Brouillons',
-            count: drafts,
-            color: kTextMuted,
-            onTap: () => onTap(1),
-          ),
-          if (failed > 0) ...[
+  Widget build(BuildContext context) => Container(
+        color: kSurface,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(children: [
+            _Chip(label: 'Total',      count: total,     color: kPrimary,   onTap: () => onTap(0)),
             const SizedBox(width: 8),
-            _StatChip(
-              label: 'Échoués',
-              count: failed,
-              color: kDanger,
-              onTap: () => onTap(4),
-            ),
-          ],
-        ]),
-      ),
-    );
-  }
+            _Chip(label: 'Publiés',    count: published, color: kSuccess,   onTap: () => onTap(3)),
+            const SizedBox(width: 8),
+            _Chip(label: 'Planifiés',  count: scheduled, color: kWarning,   onTap: () => onTap(2)),
+            const SizedBox(width: 8),
+            _Chip(label: 'Brouillons', count: drafts,    color: kTextMuted, onTap: () => onTap(1)),
+            if (failed > 0) ...[
+              const SizedBox(width: 8),
+              _Chip(label: 'Échoués', count: failed, color: kDanger, onTap: () => onTap(4)),
+            ],
+          ]),
+        ),
+      );
 }
 
-class _StatChip extends StatelessWidget {
+class _Chip extends StatelessWidget {
   final String label;
   final int count;
   final Color color;
   final VoidCallback onTap;
 
-  const _StatChip({
+  const _Chip({
     required this.label,
     required this.count,
     required this.color,
@@ -200,36 +202,24 @@ class _StatChip extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.25)),
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withOpacity(0.25)),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Text(count.toString(),
+                style: TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.w800, color: color)),
+            const SizedBox(width: 5),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w500, color: color)),
+          ]),
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Text(
-            count.toString(),
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: color,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: color,
-            ),
-          ),
-        ]),
-      ),
-    );
-  }
+      );
 }

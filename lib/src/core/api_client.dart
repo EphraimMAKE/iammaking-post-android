@@ -54,6 +54,17 @@ class ApiClient {
     }
   }
 
+  static Future<dynamic> put(String path, Map<String, dynamic> body) async {
+    try {
+      final res = await http.put(Uri.parse('$_baseUrl$path'),
+              headers: await _headers(), body: jsonEncode(body))
+          .timeout(const Duration(seconds: 30));
+      return _parse(res);
+    } on SocketException {
+      throw ApiException('No internet connection.');
+    }
+  }
+
   static Future<dynamic> postMultipart(
     String path,
     Map<String, String> fields, {

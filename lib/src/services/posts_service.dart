@@ -38,6 +38,20 @@ class PostsService {
     return Post.fromJson(data['data'] as Map<String, dynamic>);
   }
 
+  static Future<Post> update({
+    required int postId,
+    required String caption,
+    required List<int> accountIds,
+    String? scheduleAt,
+  }) async {
+    final data = await ApiClient.put('/posts/$postId', {
+      'caption':     caption,
+      'account_ids': accountIds,
+      if (scheduleAt != null) 'schedule_at': scheduleAt,
+    });
+    return Post.fromJson(data['data'] as Map<String, dynamic>);
+  }
+
   static Future<Map<String, dynamic>> publish(int postId) async {
     return await ApiClient.post('/posts/$postId/publish', {}) as Map<String, dynamic>;
   }
