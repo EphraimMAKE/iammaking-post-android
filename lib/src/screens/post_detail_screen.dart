@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -19,9 +19,9 @@ class PostDetailScreen extends StatelessWidget {
     final provider = context.read<PostsProvider>();
 
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: context.cBg,
       appBar: AppBar(
-        title: const Text('Détail du post'),
+        title: const Text('DÃ©tail du post'),
         actions: [
           // Edit (only for draft/scheduled)
           if (post.status == 'draft' || post.status == 'scheduled')
@@ -56,7 +56,7 @@ class PostDetailScreen extends StatelessWidget {
                   value: _Action.retry,
                   child: ListTile(
                     leading: Icon(Icons.refresh_rounded),
-                    title: Text('Réessayer'),
+                    title: Text('RÃ©essayer'),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),
@@ -76,20 +76,20 @@ class PostDetailScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-          // ── Status + dates ───────────────────────────────────
+          // â”€â”€ Status + dates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: kSurface,
+              color: context.cSurface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: kBorder),
+              border: Border.all(color: context.cBorder),
             ),
             child: Column(children: [
               Row(children: [
                 StatusBadge(post.status),
                 const Spacer(),
                 Text(
-                  'Créé le ${fmtShort.format(post.createdAt.toLocal())}',
+                  'CrÃ©Ã© le ${fmtShort.format(post.createdAt.toLocal())}',
                   style: const TextStyle(fontSize: 12, color: kTextMuted),
                 ),
               ]),
@@ -101,7 +101,7 @@ class PostDetailScreen extends StatelessWidget {
                   const Icon(Icons.schedule_rounded, size: 15, color: kWarning),
                   const SizedBox(width: 6),
                   Text(
-                    'Planifié le ${fmtShort.format(post.scheduledAt!.toLocal())}',
+                    'PlanifiÃ© le ${fmtShort.format(post.scheduledAt!.toLocal())}',
                     style: const TextStyle(
                         fontSize: 13,
                         color: kWarning,
@@ -114,15 +114,15 @@ class PostDetailScreen extends StatelessWidget {
 
           const SizedBox(height: 14),
 
-          // ── Caption ──────────────────────────────────────────
+          // â”€â”€ Caption â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           if (post.caption.isNotEmpty)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: kSurface,
+                color: context.cSurface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: kBorder),
+                border: Border.all(color: context.cBorder),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
@@ -136,7 +136,7 @@ class PostDetailScreen extends StatelessWidget {
                     onTap: () {
                       Clipboard.setData(ClipboardData(text: post.caption));
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text('Copié dans le presse-papier'),
+                        content: Text('CopiÃ© dans le presse-papier'),
                         duration: Duration(seconds: 2),
                       ));
                     },
@@ -153,17 +153,17 @@ class PostDetailScreen extends StatelessWidget {
                     style: const TextStyle(
                         fontSize: 15, height: 1.6, color: kText)),
                 const SizedBox(height: 8),
-                Text('${post.caption.length} caractères',
+                Text('${post.caption.length} caractÃ¨res',
                     style: const TextStyle(fontSize: 11, color: kTextMuted)),
               ]),
             ),
 
           const SizedBox(height: 14),
 
-          // ── Media ────────────────────────────────────────────
+          // â”€â”€ Media â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           if (post.medias.isNotEmpty) _MediaSection(medias: post.medias),
 
-          // ── Accounts ─────────────────────────────────────────
+          // â”€â”€ Accounts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           if (post.accounts.isNotEmpty) ...[
             const Text('Comptes',
                 style: TextStyle(
@@ -180,9 +180,9 @@ class PostDetailScreen extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: kSurface,
+                  color: context.cSurface,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: kBorder),
+                  border: Border.all(color: context.cBorder),
                 ),
                 child: Row(children: [
                   CircleAvatar(
@@ -228,7 +228,7 @@ class PostDetailScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // ── Primary action ────────────────────────────────────
+          // â”€â”€ Primary action â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           if (post.status == 'draft' || post.status == 'scheduled')
             ElevatedButton.icon(
               onPressed: () => _publish(context, provider),
@@ -240,7 +240,7 @@ class PostDetailScreen extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: () => _retry(context, provider),
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Réessayer la publication'),
+              label: const Text('RÃ©essayer la publication'),
               style: ElevatedButton.styleFrom(backgroundColor: kWarning),
             ),
 
@@ -270,7 +270,7 @@ class PostDetailScreen extends StatelessWidget {
     );
   }
 
-  // ── Actions ───────────────────────────────────────────────────
+  // â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   void _handleAction(BuildContext ctx, PostsProvider p, _Action a) {
     switch (a) {
@@ -286,7 +286,7 @@ class PostDetailScreen extends StatelessWidget {
     if (res != null) {
       ScaffoldMessenger.of(ctx).showSnackBar(
           const SnackBar(
-              content: Text('Publié !'), backgroundColor: kSuccess));
+              content: Text('PubliÃ© !'), backgroundColor: kSuccess));
       Navigator.of(ctx).pop();
     } else {
       ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
@@ -300,8 +300,8 @@ class PostDetailScreen extends StatelessWidget {
     if (!ctx.mounted) return;
     ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
       content: Text(res != null
-          ? 'Publication réussie !'
-          : (p.error ?? 'Nouvelle tentative échouée')),
+          ? 'Publication rÃ©ussie !'
+          : (p.error ?? 'Nouvelle tentative Ã©chouÃ©e')),
       backgroundColor: res != null ? kSuccess : kDanger,
     ));
     if (res != null && ctx.mounted) Navigator.of(ctx).pop();
@@ -312,7 +312,7 @@ class PostDetailScreen extends StatelessWidget {
     if (!ctx.mounted) return;
     ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
       content: Text(ok
-          ? 'Post dupliqué en brouillon !'
+          ? 'Post dupliquÃ© en brouillon !'
           : (p.error ?? 'Erreur lors de la duplication')),
       backgroundColor: ok ? kSuccess : kDanger,
     ));
@@ -323,7 +323,7 @@ class PostDetailScreen extends StatelessWidget {
       context: ctx,
       builder: (_) => AlertDialog(
         title: const Text('Supprimer ce post ?'),
-        content: const Text('Cette action est irréversible.'),
+        content: const Text('Cette action est irrÃ©versible.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -352,7 +352,7 @@ class _MediaSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('Médias',
+      const Text('MÃ©dias',
           style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -366,7 +366,7 @@ class _MediaSection extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: kBorder),
+            border: Border.all(color: context.cBorder),
           ),
           clipBehavior: Clip.antiAlias,
           child: Image.network(

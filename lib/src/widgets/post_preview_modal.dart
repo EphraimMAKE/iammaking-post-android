@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/social_account.dart';
 import '../theme/app_theme.dart';
@@ -63,9 +63,9 @@ class _PostPreviewModalState extends State<PostPreviewModal>
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: kBg,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: context.cBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(children: [
         // Drag handle
@@ -75,24 +75,24 @@ class _PostPreviewModalState extends State<PostPreviewModal>
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: kBorder,
+              color: context.cBorder,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
         ),
         // Header
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: Row(children: [
-            Icon(Icons.preview_rounded, color: kPrimary, size: 20),
-            SizedBox(width: 8),
+            const Icon(Icons.preview_rounded, color: kPrimary, size: 20),
+            const SizedBox(width: 8),
             Text('Prévisualisation',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kText)),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: context.cText)),
           ]),
         ),
         // Platform tabs
         Container(
-          color: kSurface,
+          color: context.cSurface,
           child: TabBar(
             controller: _tabs,
             tabs: _platforms
@@ -146,9 +146,9 @@ class _PlatformPreview extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Container(
         decoration: BoxDecoration(
-          color: kSurface,
+          color: context.cSurface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: kBorder),
+          border: Border.all(color: context.cBorder),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           // Account header
@@ -205,9 +205,9 @@ class _PlatformPreview extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 12),
               height: 140,
               decoration: BoxDecoration(
-                color: kBg,
+                color: context.cBg,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: kBorder),
+                border: Border.all(color: context.cBorder),
               ),
               child: const Center(
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -232,10 +232,10 @@ class _PlatformPreview extends StatelessWidget {
 
   String _subtitle(String p) {
     switch (p) {
-      case 'facebook':  return 'Public · À l\'instant';
-      case 'instagram': return '0 j\'aime · À l\'instant';
-      case 'x':         return 'À l\'instant';
-      default:          return 'À l\'instant';
+      case 'facebook':  return 'Public Â· Ã€ l\'instant';
+      case 'instagram': return '0 j\'aime Â· Ã€ l\'instant';
+      case 'x':         return 'Ã€ l\'instant';
+      default:          return 'Ã€ l\'instant';
     }
   }
 }

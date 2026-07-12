@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../core/platform_meta.dart';
 import '../models/post.dart';
@@ -22,7 +22,7 @@ class PostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final date = post.scheduledAt ?? post.createdAt;
-    final fmt  = DateFormat('d MMM y · HH:mm');
+    final fmt  = DateFormat('d MMM y Â· HH:mm');
 
     Widget card = Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -63,7 +63,7 @@ class PostCard extends StatelessWidget {
                 const Icon(Icons.image_outlined, size: 14, color: kTextMuted),
                 const SizedBox(width: 4),
                 Text(
-                  '${post.medias.length} média${post.medias.length > 1 ? "s" : ""}',
+                  '${post.medias.length} mÃ©dia${post.medias.length > 1 ? "s" : ""}',
                   style: const TextStyle(fontSize: 12, color: kTextMuted),
                 ),
               ]),
@@ -141,7 +141,7 @@ class PostCard extends StatelessWidget {
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('Supprimer ce post ?'),
-            content: const Text('Cette action est irréversible.'),
+            content: const Text('Cette action est irrÃ©versible.'),
             actions: [
               TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
               TextButton(

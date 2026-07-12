@@ -12,8 +12,8 @@ class ShimmerPostCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Shimmer.fromColors(
-          baseColor: const Color(0xFFE5E7EB),
-          highlightColor: const Color(0xFFF9FAFB),
+          baseColor: context.isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB),
+          highlightColor: context.isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF9FAFB),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             // Status + date row
             Row(children: [
@@ -61,8 +61,8 @@ class ShimmerAccountCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Shimmer.fromColors(
-          baseColor: const Color(0xFFE5E7EB),
-          highlightColor: const Color(0xFFF9FAFB),
+          baseColor: context.isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB),
+          highlightColor: context.isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF9FAFB),
           child: Row(children: [
             const CircleAvatar(backgroundColor: Colors.white, radius: 22),
             const SizedBox(width: 14),

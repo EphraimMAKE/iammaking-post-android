@@ -8,6 +8,7 @@ import '../models/social_account.dart';
 import '../providers/accounts_provider.dart';
 import '../providers/posts_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/caption_templates_sheet.dart';
 import '../widgets/post_preview_modal.dart';
 
 class CreatePostScreen extends StatefulWidget {
@@ -187,10 +188,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     final fmt       = DateFormat('EEE d MMM, HH:mm');
 
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: context.cBg,
       appBar: AppBar(
         title: const Text('Créer un post'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.auto_awesome_rounded),
+            tooltip: 'Templates',
+            onPressed: () => showCaptionTemplates(
+              context,
+              onSelected: (text) {
+                _captionCtrl.text = text;
+                _captionCtrl.selection = TextSelection.collapsed(
+                    offset: text.length);
+              },
+            ),
+          ),
           TextButton.icon(
             onPressed: () => _openPreview(accounts),
             icon: const Icon(Icons.preview_rounded, size: 18),
@@ -205,9 +218,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           // ── Caption ──────────────────────────────────────────
           Container(
             decoration: BoxDecoration(
-              color: kSurface,
+              color: context.cSurface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: kBorder),
+              border: Border.all(color: context.cBorder),
             ),
             padding: const EdgeInsets.all(14),
             child: TextField(
@@ -318,9 +331,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                  color: kSurface,
+                  color: context.cSurface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: kBorder)),
+                  border: Border.all(color: context.cBorder)),
               child: const Text(
                 'Aucun compte connecté. Va dans Comptes pour en ajouter.',
                 style: TextStyle(color: kTextMuted, fontSize: 14),
@@ -360,9 +373,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           // ── Schedule ──────────────────────────────────────────
           Container(
             decoration: BoxDecoration(
-                color: kSurface,
+                color: context.cSurface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: kBorder)),
+                border: Border.all(color: context.cBorder)),
             child: Column(children: [
               SwitchListTile(
                 title: const Text('Planifier pour plus tard',

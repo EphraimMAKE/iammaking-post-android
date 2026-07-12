@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/platform_meta.dart';
 import '../providers/accounts_provider.dart';
@@ -24,7 +24,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
   Widget build(BuildContext context) {
     final p = context.watch<AccountsProvider>();
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: context.cBg,
       appBar: AppBar(title: const Text('Comptes')),
       body: p.loading
           ? shimmerList(count: 4, item: () => const ShimmerAccountCard())
@@ -33,8 +33,8 @@ class _AccountsScreenState extends State<AccountsScreen> {
               child: p.accounts.isEmpty
                   ? EmptyState(
                       icon: Icons.people_outline_rounded,
-                      title: 'Aucun compte connecté',
-                      subtitle: 'Connecte tes réseaux sociaux depuis\npost.iammaking.com',
+                      title: 'Aucun compte connectÃ©',
+                      subtitle: 'Connecte tes rÃ©seaux sociaux depuis\npost.iammaking.com',
                     )
                   : _AccountList(provider: p),
             ),

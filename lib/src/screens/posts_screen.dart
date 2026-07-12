@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/posts_provider.dart';
 import '../screens/post_detail_screen.dart';
@@ -17,7 +17,7 @@ class _PostsScreenState extends State<PostsScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   static const _filters = ['all', 'draft', 'scheduled', 'published', 'failed'];
-  static const _labels  = ['Tous', 'Brouillons', 'Planifiés', 'Publiés', 'Échoués'];
+  static const _labels  = ['Tous', 'Brouillons', 'PlanifiÃ©s', 'PubliÃ©s', 'Ã‰chouÃ©s'];
 
   bool   _searchOpen = false;
   String _query      = '';
@@ -37,13 +37,13 @@ class _PostsScreenState extends State<PostsScreen>
   Widget build(BuildContext context) {
     final provider = context.watch<PostsProvider>();
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: context.cBg,
       appBar: AppBar(
         title: _searchOpen
             ? TextField(
                 autofocus: true,
                 decoration: const InputDecoration(
-                  hintText: 'Rechercher dans vos posts…',
+                  hintText: 'Rechercher dans vos postsâ€¦',
                   border: InputBorder.none,
                   hintStyle: TextStyle(color: kTextMuted),
                 ),
@@ -94,12 +94,12 @@ class _PostsScreenState extends State<PostsScreen>
                               ? Icons.search_off_rounded
                               : Icons.article_outlined,
                           title: _query.isNotEmpty
-                              ? 'Aucun résultat'
+                              ? 'Aucun rÃ©sultat'
                               : 'Aucun post ${_labelFor(status)}',
                           subtitle: _query.isNotEmpty
-                              ? 'Essaie un autre mot-clé.'
+                              ? 'Essaie un autre mot-clÃ©.'
                               : status == 'all'
-                                  ? 'Appuie sur + pour créer ton premier post.'
+                                  ? 'Appuie sur + pour crÃ©er ton premier post.'
                                   : 'Pas encore de posts ${_labelFor(status)}.',
                         );
                       }
@@ -129,9 +129,9 @@ class _PostsScreenState extends State<PostsScreen>
   String _labelFor(String status) {
     switch (status) {
       case 'draft':     return 'en brouillon';
-      case 'scheduled': return 'planifiés';
-      case 'published': return 'publiés';
-      case 'failed':    return 'échoués';
+      case 'scheduled': return 'planifiÃ©s';
+      case 'published': return 'publiÃ©s';
+      case 'failed':    return 'Ã©chouÃ©s';
       default:          return '';
     }
   }
@@ -142,14 +142,14 @@ class _PostsScreenState extends State<PostsScreen>
     if (!ctx.mounted) return;
     ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
       content: Text(res != null
-          ? 'Publié avec succès !'
-          : (p.error ?? 'Échec de publication')),
+          ? 'PubliÃ© avec succÃ¨s !'
+          : (p.error ?? 'Ã‰chec de publication')),
       backgroundColor: res != null ? kSuccess : kDanger,
     ));
   }
 }
 
-// ── Stats bar ────────────────────────────────────────────────────────────────
+// â”€â”€ Stats bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _StatsBar extends StatelessWidget {
   final int total, published, scheduled, drafts, failed;
@@ -166,7 +166,7 @@ class _StatsBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        color: kSurface,
+        color: context.cSurface,
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -174,14 +174,14 @@ class _StatsBar extends StatelessWidget {
           child: Row(children: [
             _Chip(label: 'Total',      count: total,     color: kPrimary,   onTap: () => onTap(0)),
             const SizedBox(width: 8),
-            _Chip(label: 'Publiés',    count: published, color: kSuccess,   onTap: () => onTap(3)),
+            _Chip(label: 'PubliÃ©s',    count: published, color: kSuccess,   onTap: () => onTap(3)),
             const SizedBox(width: 8),
-            _Chip(label: 'Planifiés',  count: scheduled, color: kWarning,   onTap: () => onTap(2)),
+            _Chip(label: 'PlanifiÃ©s',  count: scheduled, color: kWarning,   onTap: () => onTap(2)),
             const SizedBox(width: 8),
             _Chip(label: 'Brouillons', count: drafts,    color: kTextMuted, onTap: () => onTap(1)),
             if (failed > 0) ...[
               const SizedBox(width: 8),
-              _Chip(label: 'Échoués', count: failed, color: kDanger, onTap: () => onTap(4)),
+              _Chip(label: 'Ã‰chouÃ©s', count: failed, color: kDanger, onTap: () => onTap(4)),
             ],
           ]),
         ),

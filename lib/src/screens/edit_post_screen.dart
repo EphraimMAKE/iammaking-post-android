@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../core/platform_meta.dart';
@@ -83,11 +83,11 @@ class _EditPostScreenState extends State<EditPostScreen> {
 
   Future<void> _save() async {
     if (_captionCtrl.text.trim().isEmpty) {
-      _snack('Le caption ne peut pas être vide.', error: true);
+      _snack('Le caption ne peut pas Ãªtre vide.', error: true);
       return;
     }
     if (_selectedAccountIds.isEmpty) {
-      _snack('Sélectionne au moins un compte.', error: true);
+      _snack('SÃ©lectionne au moins un compte.', error: true);
       return;
     }
     setState(() => _loading = true);
@@ -102,7 +102,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
     if (!mounted) return;
     setState(() => _loading = false);
     if (ok) {
-      _snack('Post mis à jour !');
+      _snack('Post mis Ã  jour !');
       Navigator.of(context).pop(true);
     } else {
       _snack(context.read<PostsProvider>().error ?? 'Erreur', error: true);
@@ -128,7 +128,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
     final counterColor = isOver ? kDanger : isWarn ? kWarning : kTextMuted;
 
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: context.cBg,
       appBar: AppBar(
         title: const Text('Modifier le post'),
         actions: [
@@ -147,16 +147,16 @@ class _EditPostScreenState extends State<EditPostScreen> {
           // Caption
           Container(
             decoration: BoxDecoration(
-              color: kSurface,
+              color: context.cSurface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: kBorder),
+              border: Border.all(color: context.cBorder),
             ),
             padding: const EdgeInsets.all(14),
             child: TextField(
               controller: _captionCtrl,
               maxLines: 8,
               decoration: const InputDecoration.collapsed(
-                hintText: 'Contenu du post…',
+                hintText: 'Contenu du postâ€¦',
                 hintStyle: TextStyle(color: kTextMuted),
               ),
               style: const TextStyle(fontSize: 15, height: 1.6),
@@ -189,10 +189,10 @@ class _EditPostScreenState extends State<EditPostScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                  color: kSurface,
+                  color: context.cSurface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: kBorder)),
-              child: const Text('Aucun compte connecté.',
+                  border: Border.all(color: context.cBorder)),
+              child: const Text('Aucun compte connectÃ©.',
                   style: TextStyle(color: kTextMuted, fontSize: 14)),
             )
           else
@@ -228,9 +228,9 @@ class _EditPostScreenState extends State<EditPostScreen> {
           // Schedule toggle
           Container(
             decoration: BoxDecoration(
-                color: kSurface,
+                color: context.cSurface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: kBorder)),
+                border: Border.all(color: context.cBorder)),
             child: Column(children: [
               SwitchListTile(
                 title: const Text('Planifier',

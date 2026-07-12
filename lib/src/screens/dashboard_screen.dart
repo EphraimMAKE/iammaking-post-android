@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../core/platform_meta.dart';
@@ -35,7 +35,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String get _greeting {
     final h = DateTime.now().hour;
     if (h < 12) return 'Bonjour';
-    if (h < 18) return 'Bon après-midi';
+    if (h < 18) return 'Bon aprÃ¨s-midi';
     return 'Bonsoir';
   }
 
@@ -46,7 +46,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final firstName = (auth.user?.name ?? '').split(' ').first;
 
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: context.cBg,
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
@@ -64,29 +64,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  // ── Greeting ──────────────────────────────────
+                  // â”€â”€ Greeting â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                   _Greeting(greeting: _greeting, name: firstName),
 
                   const SizedBox(height: 24),
 
-                  // ── Stats grid ────────────────────────────────
+                  // â”€â”€ Stats grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                   _StatsGrid(provider: posts),
 
                   const SizedBox(height: 20),
 
-                  // ── Quick create ──────────────────────────────
+                  // â”€â”€ Quick create â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                   ElevatedButton.icon(
                     onPressed: widget.onCreateTap,
                     icon: const Icon(Icons.add_rounded),
-                    label: const Text('Créer un nouveau post'),
+                    label: const Text('CrÃ©er un nouveau post'),
                   ),
 
                   const SizedBox(height: 28),
 
-                  // ── Upcoming scheduled ────────────────────────
+                  // â”€â”€ Upcoming scheduled â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                   if (posts.upcomingScheduled.isNotEmpty) ...[
                     _SectionHeader(
-                      title: 'Prochains planifiés',
+                      title: 'Prochains planifiÃ©s',
                       count: posts.scheduledCount,
                       onSeeAll: widget.onPostsTap,
                     ),
@@ -99,10 +99,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 24),
                   ],
 
-                  // ── Recent published ──────────────────────────
+                  // â”€â”€ Recent published â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                   if (posts.recentPublished.isNotEmpty) ...[
                     _SectionHeader(
-                      title: 'Publiés récemment',
+                      title: 'PubliÃ©s rÃ©cemment',
                       count: posts.publishedCount,
                       onSeeAll: widget.onPostsTap,
                     ),
@@ -115,14 +115,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 24),
                   ],
 
-                  // ── Failed posts alert ────────────────────────
+                  // â”€â”€ Failed posts alert â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                   if (posts.failedCount > 0)
                     _FailedAlert(
                       count: posts.failedCount,
                       onTap: widget.onPostsTap,
                     ),
 
-                  // ── Empty state ───────────────────────────────
+                  // â”€â”€ Empty state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                   if (posts.totalCount == 0)
                     _EmptyDashboard(onCreateTap: widget.onCreateTap),
 
@@ -139,7 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// ── Greeting ─────────────────────────────────────────────────────────────────
+// â”€â”€ Greeting â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _Greeting extends StatelessWidget {
   final String greeting;
@@ -162,7 +162,7 @@ class _Greeting extends StatelessWidget {
       );
 }
 
-// ── Stats grid ────────────────────────────────────────────────────────────────
+// â”€â”€ Stats grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _StatsGrid extends StatelessWidget {
   final PostsProvider provider;
@@ -185,13 +185,13 @@ class _StatsGrid extends StatelessWidget {
           color: kPrimary,
         ),
         _StatCard(
-          label: 'Publiés',
+          label: 'PubliÃ©s',
           value: provider.publishedCount,
           icon: Icons.check_circle_outline_rounded,
           color: kSuccess,
         ),
         _StatCard(
-          label: 'Planifiés',
+          label: 'PlanifiÃ©s',
           value: provider.scheduledCount,
           icon: Icons.schedule_rounded,
           color: kWarning,
@@ -224,9 +224,9 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: kSurface,
+          color: context.cSurface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: kBorder),
+          border: Border.all(color: context.cBorder),
         ),
         child: Row(children: [
           Container(
@@ -254,7 +254,7 @@ class _StatCard extends StatelessWidget {
       );
 }
 
-// ── Section header ───────────────────────────────────────────────────────────
+// â”€â”€ Section header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _SectionHeader extends StatelessWidget {
   final String title;
@@ -297,7 +297,7 @@ class _SectionHeader extends StatelessWidget {
       ]);
 }
 
-// ── Scheduled tile ───────────────────────────────────────────────────────────
+// â”€â”€ Scheduled tile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _ScheduledTile extends StatelessWidget {
   final Post post;
@@ -308,7 +308,7 @@ class _ScheduledTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dt  = post.scheduledAt ?? post.createdAt;
-    final fmt = DateFormat('EEE d MMM · HH:mm');
+    final fmt = DateFormat('EEE d MMM Â· HH:mm');
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -373,7 +373,7 @@ class _ScheduledTile extends StatelessWidget {
   }
 }
 
-// ── Recent published tile ────────────────────────────────────────────────────
+// â”€â”€ Recent published tile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _RecentPostTile extends StatelessWidget {
   final Post post;
@@ -430,7 +430,7 @@ class _RecentPostTile extends StatelessWidget {
   }
 }
 
-// ── Failed alert ─────────────────────────────────────────────────────────────
+// â”€â”€ Failed alert â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _FailedAlert extends StatelessWidget {
   final int count;
@@ -454,7 +454,7 @@ class _FailedAlert extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                '$count post${count > 1 ? "s ont" : " a"} échoué${count > 1 ? "s" : ""}. Appuie pour voir.',
+                '$count post${count > 1 ? "s ont" : " a"} Ã©chouÃ©${count > 1 ? "s" : ""}. Appuie pour voir.',
                 style: const TextStyle(
                     fontSize: 13, color: kDanger, fontWeight: FontWeight.w500),
               ),
@@ -465,7 +465,7 @@ class _FailedAlert extends StatelessWidget {
       );
 }
 
-// ── Empty dashboard ───────────────────────────────────────────────────────────
+// â”€â”€ Empty dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _EmptyDashboard extends StatelessWidget {
   final VoidCallback onCreateTap;
@@ -484,12 +484,12 @@ class _EmptyDashboard extends StatelessWidget {
                 size: 48, color: kPrimary),
           ),
           const SizedBox(height: 20),
-          const Text('Prêt à publier ?',
+          const Text('PrÃªt Ã  publier ?',
               style: TextStyle(
                   fontSize: 20, fontWeight: FontWeight.w800, color: kText)),
           const SizedBox(height: 8),
           const Text(
-            'Crée ton premier post et publie\nsur tous tes réseaux en un clic.',
+            'CrÃ©e ton premier post et publie\nsur tous tes rÃ©seaux en un clic.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, color: kTextMuted, height: 1.5),
           ),
@@ -497,7 +497,7 @@ class _EmptyDashboard extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: onCreateTap,
             icon: const Icon(Icons.add_rounded),
-            label: const Text('Créer mon premier post'),
+            label: const Text('CrÃ©er mon premier post'),
           ),
         ]),
       );
