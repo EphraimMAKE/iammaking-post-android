@@ -36,6 +36,10 @@ dependencies:
   # Local push notifications
   flutter_local_notifications: ^17.2.3
 
+  # Draft persistence + offline state
+  shared_preferences: ^2.3.2
+  connectivity_plus: ^6.0.3
+
   cupertino_icons: ^1.0.8
 
 dev_dependencies:

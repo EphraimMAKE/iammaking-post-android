@@ -74,11 +74,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                   const SizedBox(height: 20),
 
-                  // â”€â”€ Quick create â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                  // ── Weekly activity chart ──────────────────────────────
+                  if (posts.totalCount > 0) ...[
+                    _WeeklyActivityChart(provider: posts),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // ── Quick create ──────────────────────────────────────
                   ElevatedButton.icon(
                     onPressed: widget.onCreateTap,
                     icon: const Icon(Icons.add_rounded),
-                    label: const Text('CrÃ©er un nouveau post'),
+                    label: const Text('Créer un nouveau post'),
                   ),
 
                   const SizedBox(height: 28),
@@ -162,7 +168,89 @@ class _Greeting extends StatelessWidget {
       );
 }
 
-// â”€â”€ Stats grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Weekly activity chart ─────────────────────────────────────────────────────
+
+class _WeeklyActivityChart extends StatelessWidget {
+  final PostsProvider provider;
+  const _WeeklyActivityChart({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final now  = DateTime.now();
+    final days = List.generate(7, (i) => now.subtract(Duration(days: 6 - i)));
+    final labels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
+    // Count posts per day (by createdAt)
+    final counts = days.map((day) {
+      return provider.posts.where((p) {
+        final d = p.createdAt.toLocal();
+        return d.year == day.year && d.month == day.month && d.day == day.day;
+      }).length;
+    }).toList();
+
+    final maxVal = counts.reduce((a, b) => a > b ? a : b);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.cSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.cBorder),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.bar_chart_rounded, size: 18, color: kPrimary),
+          const SizedBox(width: 8),
+          Text('Activité cette semaine',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
+                  color: context.cText)),
+        ]),
+        const SizedBox(height: 16),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: List.generate(7, (i) {
+            final count   = counts[i];
+            final isToday = days[i].day == now.day && days[i].month == now.month;
+            final frac    = maxVal == 0 ? 0.0 : count / maxVal;
+            final barH    = 4 + frac * 60;
+
+            return Expanded(
+              child: Column(children: [
+                if (count > 0)
+                  Text('$count',
+                      style: TextStyle(fontSize: 10, color: context.cMuted)),
+                const SizedBox(height: 2),
+                Container(
+                  height: barH,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    color: isToday
+                        ? kPrimary
+                        : count > 0
+                            ? kPrimary.withOpacity(0.40)
+                            : context.cBorder,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  labels[days[i].weekday % 7],
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isToday ? kPrimary : context.cMuted,
+                    fontWeight: isToday ? FontWeight.w700 : FontWeight.normal,
+                  ),
+                ),
+              ]),
+            );
+          }),
+        ),
+      ]),
+    );
+  }
+}
+
+// ── Stats grid ────────────────────────────────────────────────────────────────
 
 class _StatsGrid extends StatelessWidget {
   final PostsProvider provider;

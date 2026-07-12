@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,6 +8,7 @@ import '../core/platform_meta.dart';
 import '../models/social_account.dart';
 import '../providers/accounts_provider.dart';
 import '../providers/posts_provider.dart';
+import '../services/draft_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/caption_templates_sheet.dart';
 import '../widgets/post_preview_modal.dart';
@@ -27,19 +29,103 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   DateTime? _scheduledAt;
   XFile?    _image;
   bool      _loading = false;
+  Timer?    _draftTimer;
 
   @override
   void initState() {
     super.initState();
-    _captionCtrl.addListener(() => setState(() => _captionLength = _captionCtrl.text.length));
-    WidgetsBinding.instance.addPostFrameCallback(
-        (_) => context.read<AccountsProvider>().load());
+    _captionCtrl.addListener(_onCaptionChange);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      context.read<AccountsProvider>().load();
+      await _restoreDraft();
+    });
+  }
+
+  void _onCaptionChange() {
+    setState(() => _captionLength = _captionCtrl.text.length);
+    _draftTimer?.cancel();
+    _draftTimer = Timer(const Duration(seconds: 2), _saveDraft);
+  }
+
+  Future<void> _saveDraft() async {
+    await DraftService.save(
+      caption:    _captionCtrl.text,
+      accountIds: _selectedAccountIds.toList(),
+      scheduledAt: _schedule ? _scheduledAt : null,
+    );
+  }
+
+  Future<void> _restoreDraft() async {
+    final draft = await DraftService.load();
+    if (draft == null || !mounted) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Reprendre le brouillon ?'),
+        content: Text(
+          draft.caption.length > 80
+              ? '${draft.caption.substring(0, 80)}…'
+              : draft.caption,
+          style: const TextStyle(fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Non')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Oui, reprendre',
+                  style: TextStyle(fontWeight: FontWeight.w700))),
+        ],
+      ),
+    );
+    if (confirm == true && mounted) {
+      setState(() {
+        _captionCtrl.text = draft.caption;
+        _selectedAccountIds.addAll(draft.accountIds);
+        if (draft.scheduledAt != null) {
+          _schedule     = true;
+          _scheduledAt  = draft.scheduledAt;
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
+    _draftTimer?.cancel();
+    _captionCtrl.removeListener(_onCaptionChange);
     _captionCtrl.dispose();
     super.dispose();
+  }
+
+  // ── Hashtag suggestions ───────────────────────────────────────
+
+  static const _hashtagMap = {
+    'lancement':    ['#lancement', '#nouveau', '#nouveauté', '#produit'],
+    'conseil':      ['#conseil', '#astuce', '#tips', '#apprentissage'],
+    'annonce':      ['#annonce', '#news', '#info', '#alerte'],
+    'promotion':    ['#promo', '#soldes', '#offre', '#deal'],
+    'partenariat':  ['#partenariat', '#collaboration', '#collab'],
+    'coulisses':    ['#coulisses', '#bts', '#backstage', '#team'],
+    'merci':        ['#merci', '#gratitude', '#communauté'],
+    'question':     ['#question', '#sondage', '#avis', '#opinion'],
+    'marketing':    ['#marketing', '#digitalmarketing', '#socialmedia'],
+    'business':     ['#business', '#entrepreneur', '#startup', '#succès'],
+  };
+
+  List<String> _suggestedHashtags() {
+    final text = _captionCtrl.text.toLowerCase();
+    final seen = <String>{};
+    final tags = <String>[];
+    for (final entry in _hashtagMap.entries) {
+      if (text.contains(entry.key)) {
+        for (final t in entry.value) {
+          if (!text.contains(t) && seen.add(t)) tags.add(t);
+        }
+      }
+    }
+    return tags.take(8).toList();
   }
 
   // ── Char limit ───────────────────────────────────────────────
@@ -155,6 +241,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     if (!mounted) return;
     setState(() => _loading = false);
     if (ok) {
+      await DraftService.clear();
       _snack(publishNow
           ? 'Publié !'
           : _schedule
@@ -255,6 +342,38 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           }),
 
           const SizedBox(height: 8),
+
+          // ── Hashtag suggestions ───────────────────────────────
+          Builder(builder: (ctx) {
+            final tags = _suggestedHashtags();
+            if (tags.isEmpty) return const SizedBox.shrink();
+            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Hashtags suggérés',
+                  style: TextStyle(fontSize: 12, color: context.cMuted)),
+              const SizedBox(height: 6),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: tags.map((tag) => Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ActionChip(
+                      label: Text(tag, style: const TextStyle(fontSize: 12)),
+                      onPressed: () {
+                        final cur  = _captionCtrl.text;
+                        final text = cur.isEmpty ? tag : '$cur $tag';
+                        _captionCtrl.text = text;
+                        _captionCtrl.selection =
+                            TextSelection.collapsed(offset: text.length);
+                      },
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  )).toList(),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ]);
+          }),
 
           // ── Image picker / preview ────────────────────────────
           if (_image != null) ...[

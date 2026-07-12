@@ -6,8 +6,10 @@ import 'src/providers/posts_provider.dart';
 import 'src/providers/theme_provider.dart';
 import 'src/screens/home_screen.dart';
 import 'src/screens/login_screen.dart';
+import 'src/services/connectivity_service.dart';
 import 'src/services/notification_service.dart';
 import 'src/theme/app_theme.dart';
+import 'src/widgets/offline_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +18,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ConnectivityService()),
         ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
         ChangeNotifierProvider(create: (_) => PostsProvider()),
         ChangeNotifierProvider(create: (_) => AccountsProvider()),
@@ -53,7 +56,7 @@ class _AuthGate extends StatelessWidget {
         return const Scaffold(
             body: Center(child: CircularProgressIndicator()));
       case AuthStatus.authenticated:
-        return const HomeScreen();
+        return const OfflineBanner(child: HomeScreen());
       case AuthStatus.unauthenticated:
         return const LoginScreen();
     }
